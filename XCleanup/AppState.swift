@@ -31,6 +31,14 @@ final class AppState {
         scheduleTimer()
     }
 
+    var totalCleanable: Int64 {
+        states.reduce(0) { $0 + ($1.result?.totalSize ?? 0) }
+    }
+
+    var isScanning: Bool {
+        states.contains(where: \.isBusy)
+    }
+
     func state(for id: CategoryID) -> CategoryState? {
         states.first { $0.id == id }
     }

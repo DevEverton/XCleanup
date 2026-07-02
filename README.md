@@ -41,8 +41,9 @@ Then copy `XCleanup.app` from the build products to `/Applications`.
 
 ## Notes
 
-- The app lives in the menu bar only (no Dock icon). Enable "Launch at login"
-  in its Settings.
+- The app lives in the menu bar (no Dock icon); a full window with sortable
+  per-item tables is one click away from the panel footer. Enable "Launch at
+  login" in its Settings.
 - Sizes shown are physical (allocated) bytes, so APFS clones aren't
   double-counted.
 - macOS will ask once for permission when the scanner first touches protected

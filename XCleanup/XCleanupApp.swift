@@ -18,6 +18,11 @@ struct XCleanupApp: App {
         }
         .menuBarExtraStyle(.window)
 
+        Window("XCleanup", id: "main") {
+            MainWindowView(appState: appState)
+        }
+        .defaultSize(width: 800, height: 540)
+
         Settings {
             SettingsView(appState: appState)
         }
