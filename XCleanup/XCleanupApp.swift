@@ -1,17 +1,13 @@
-//
-//  XCleanupApp.swift
-//  XCleanup
-//
-//  Created by Everton Lopes Carneiro on 02/07/26.
-//
-
 import SwiftUI
+import XCleanupCore
 
 @main
 struct XCleanupApp: App {
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        MenuBarExtra("XCleanup", systemImage: "hammer.circle") {
+            Text("XCleanup — coming up")
+                .padding()
         }
+        .menuBarExtraStyle(.window)
     }
 }
