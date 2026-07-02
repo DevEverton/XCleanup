@@ -7,28 +7,42 @@ struct SettingsView: View {
     @State private var loginItemError: String?
 
     var body: some View {
+        @Bindable var locations = appState.locations
         Form {
             Section {
-                if appState.locations.projectRoots.isEmpty {
-                    Text("No folders added — the Package Builds category is idle.").foregroundStyle(.secondary)
+                Picker("Scan for build artifacts in", selection: $locations.useCustomFolders) {
+                    Text("Home folder (automatic)").tag(false)
+                    Text("Specific folders only").tag(true)
                 }
-                ForEach(appState.locations.projectRoots, id: \.path) { url in
-                    HStack {
-                        Text(url.path).lineLimit(1).truncationMode(.middle)
-                        Spacer()
-                        Button("Remove") {
-                            appState.locations.removeProjectRoot(url)
-                        }
-                    }
-                }
-                Button("Add Folder…") {
-                    appState.locations.promptToAddProjectRoot()
+                .pickerStyle(.radioGroup)
+                .onChange(of: locations.useCustomFolders) {
                     appState.refresh(.spmBuild)
                 }
+
+                if locations.useCustomFolders {
+                    if locations.customRoots.isEmpty {
+                        Text("Add at least one folder to scan.")
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(locations.customRoots, id: \.path) { url in
+                        HStack {
+                            Text(url.path).lineLimit(1).truncationMode(.middle)
+                            Spacer()
+                            Button("Remove") {
+                                locations.removeProjectRoot(url)
+                                appState.refresh(.spmBuild)
+                            }
+                        }
+                    }
+                    Button("Add Folder…") {
+                        locations.promptToAddProjectRoot()
+                        appState.refresh(.spmBuild)
+                    }
+                }
             } header: {
-                Text("Code folders")
+                Text("Package scanning")
             } footer: {
-                Text("XCleanup scans these folders for Swift package build artifacts (.build folders), which can silently grow to hundreds of GB. Your home folder is scanned by default; system folders like Library, Music, and Photos are skipped. Narrow it to your projects folder for faster scans.")
+                Text("The Package Builds category finds Swift package build artifacts (.build folders) in your code. Automatic mode covers everything in your home folder and skips system folders like Library, Music, and Photos. Choose specific folders only if your projects live elsewhere (e.g. an external drive) or to speed up scans.")
             }
 
             Section("Behavior") {
@@ -57,7 +71,6 @@ struct SettingsView: View {
                     Text("Every 24 hours").tag(24)
                 }
             }
-
         }
         .formStyle(.grouped)
         .frame(width: 460)

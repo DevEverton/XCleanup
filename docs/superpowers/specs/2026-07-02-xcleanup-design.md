@@ -64,10 +64,12 @@ the Mac App Store. Hardened Runtime stays on so Developer ID notarization
 remains possible.
 
 - No grant flow and no onboarding: `~/Library/Developer` is read directly.
-- Project scan roots are plain paths in `UserDefaults` (`ScanLocations`),
-  defaulting to the user's home folder; the scanner skips system folders
-  (Library, Applications, Movies, Music, Pictures, Public, .Trash) so a
-  home-folder scan only walks code-like locations.
+- Project scan roots live in `ScanLocations` with two modes (amended
+  2026-07-02): **Automatic** (default — scans the home folder; the scanner
+  skips system folders like Library, Applications, Movies, Music, Pictures,
+  Public, .Trash) and **Specific folders only** (user-managed path list, for
+  external drives or faster scans). Settings shows a radio picker; the folder
+  list is only visible in custom mode.
 - macOS TCC still prompts once for protected folders (Desktop, Documents,
   Downloads) when first scanned; denial degrades gracefully to empty results.
 
