@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "XCleanupCore",
-    platforms: [.macOS(.v15)],
+    platforms: [.macOS(.v14)],
     products: [
         .library(name: "XCleanupCore", targets: ["XCleanupCore"])
     ],

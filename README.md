@@ -29,15 +29,36 @@ away from gone.
 
 ## Install
 
-Build from source (requires Xcode 26+):
+Runs on **macOS 14 (Sonoma) or later**.
+
+### Homebrew
+
+*(available once the first release is tagged)*
 
 ```bash
-git clone <this repo>
+brew install DevEverton/tap/xcleanup
+```
+
+### Direct download
+
+Grab `XCleanup-<version>.zip` from [Releases](https://github.com/DevEverton/XCleanup/releases),
+unzip, and move `XCleanup.app` to `/Applications`.
+
+### Build from source (requires Xcode 26+)
+
+```bash
+git clone https://github.com/DevEverton/XCleanup.git
 cd XCleanup
 xcodebuild -project XCleanup.xcodeproj -scheme XCleanup -configuration Release build
 ```
 
 Then copy `XCleanup.app` from the build products to `/Applications`.
+
+## Releasing (maintainers)
+
+`scripts/release.sh <version>` archives, exports with Developer ID, notarizes,
+staples, zips, and prints the sha256 for the Homebrew cask
+(`packaging/homebrew/xcleanup.rb` is the template for the tap).
 
 ## Notes
 

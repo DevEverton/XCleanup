@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    # Xcode 26 toolchain required (project uses SWIFT_DEFAULT_ACTOR_ISOLATION).
+    # If the macos-26 image is not yet available for your account, switch to
+    # macos-latest and pin Xcode with maxim-lobanov/setup-xcode.
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Core unit tests
+        run: swift test --package-path XCleanupCore
+
+      - name: Build app (unsigned)
+        run: |
+          xcodebuild -project XCleanup.xcodeproj -scheme XCleanup \
+            -configuration Release build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY=""
