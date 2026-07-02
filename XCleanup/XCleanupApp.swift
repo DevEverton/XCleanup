@@ -13,7 +13,7 @@ struct XCleanupApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("XCleanup", systemImage: "hammer.circle") {
+        MenuBarExtra("XCleanup", image: "MenuBarIcon") {
             MenuPanelView(appState: appState)
         }
         .menuBarExtraStyle(.window)
