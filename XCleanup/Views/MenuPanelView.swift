@@ -33,17 +33,13 @@ struct MenuPanelView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if appState.hasAccess {
-                categoryList
-            } else {
-                onboarding
-            }
+            categoryList
             Divider()
             footer
         }
         .frame(width: 380)
         .onAppear {
-            if appState.hasAccess { appState.refreshAll() }
+            appState.refreshAll()
         }
         .confirmationDialog(
             pending?.title ?? "",
@@ -55,36 +51,11 @@ struct MenuPanelView: View {
         }
     }
 
-    private var onboarding: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("Welcome to XCleanup", systemImage: "hammer.circle")
-                .font(.headline)
-            Text("macOS sandboxing means XCleanup can only see folders you grant it. Nothing is ever deleted without your confirmation.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-            Text("Start with Xcode's caches — the dialog opens with the right folder already selected, so just press Grant Access.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-            Button("Grant Access to Library/Developer…") {
-                appState.bookmarks.promptForDeveloperAccess()
-                if appState.hasAccess { appState.refreshAll() }
-            }
-            .keyboardShortcut(.defaultAction)
-        }
-        .padding()
-    }
-
     private var categoryList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 2) {
                 ForEach(appState.states) { state in
                     categoryRow(state)
-                    if state.id == .spmBuild, appState.bookmarks.projectRoots.isEmpty {
-                        Text("Grant access to the folder where you keep your projects — everything under it is scanned automatically.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.leading, 28)
-                    }
                     if expanded.contains(state.id) {
                         itemRows(state)
                     }
@@ -119,13 +90,7 @@ struct MenuPanelView: View {
             }
             .buttonStyle(.plain)
 
-            if state.id == .spmBuild, appState.bookmarks.projectRoots.isEmpty {
-                Button("Add Folder…") {
-                    appState.bookmarks.promptToAddProjectRoot()
-                    appState.refresh(.spmBuild)
-                }
-                .controlSize(.small)
-            } else if state.id == .simulators, let items = state.result?.items,
+            if state.id == .simulators, let items = state.result?.items,
                items.contains(where: \.isStale) {
                 Button("Delete Unavailable") {
                     pending = .deleteUnavailable(items: items.filter(\.isStale))
@@ -192,7 +157,6 @@ struct MenuPanelView: View {
             } label: {
                 Image(systemName: "arrow.clockwise")
             }
-            .disabled(!appState.hasAccess)
             if let last = appState.states.compactMap(\.result?.scannedAt).max() {
                 Text("Scanned \(last, format: .relative(presentation: .named))")
                     .font(.caption)

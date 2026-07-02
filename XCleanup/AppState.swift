@@ -12,7 +12,7 @@ final class AppState {
         var id: CategoryID { category.id }
     }
 
-    let bookmarks = BookmarkStore()
+    let locations = ScanLocations()
     private(set) var states: [CategoryState]
     var refreshIntervalHours: Int {
         didSet {
@@ -31,8 +31,6 @@ final class AppState {
         scheduleTimer()
     }
 
-    var hasAccess: Bool { bookmarks.developerRoot != nil }
-
     func state(for id: CategoryID) -> CategoryState? {
         states.first { $0.id == id }
     }
@@ -42,13 +40,13 @@ final class AppState {
     }
 
     func refresh(_ id: CategoryID) {
-        guard let ctx = context(),
-              let index = states.firstIndex(where: { $0.id == id }),
+        guard let index = states.firstIndex(where: { $0.id == id }),
               !states[index].isBusy else { return }
+        let ctx = context()
         states[index].isBusy = true
         let scan = states[index].category.scan
         Task {
-            let result = await Self.withRootAccess(ctx: ctx) { scan(ctx) }
+            let result = await Self.offMain { scan(ctx) }
             if let idx = self.states.firstIndex(where: { $0.id == id }) {
                 self.states[idx].result = result
                 self.states[idx].isBusy = false
@@ -58,12 +56,12 @@ final class AppState {
     }
 
     func clean(_ id: CategoryID, items: [ScanItem]) {
-        guard let ctx = context(),
-              let index = states.firstIndex(where: { $0.id == id }),
+        guard let index = states.firstIndex(where: { $0.id == id }),
               !states[index].isBusy, !items.isEmpty else { return }
+        let ctx = context()
         states[index].isBusy = true
         Task {
-            let outcome = await Self.withRootAccess(ctx: ctx) {
+            let outcome = await Self.offMain {
                 Deleter.delete(items: items, allowedRoots: ctx.allRoots)
             }
             if let idx = self.states.firstIndex(where: { $0.id == id }) {
@@ -75,10 +73,10 @@ final class AppState {
     }
 
     func eraseSimulator(_ item: ScanItem) {
-        guard let ctx = context() else { return }
+        let ctx = context()
         let dataURL = item.url.appendingPathComponent("data", isDirectory: true)
         Task {
-            let outcome = await Self.withRootAccess(ctx: ctx) {
+            let outcome = await Self.offMain {
                 Deleter.eraseContents(of: dataURL, allowedRoots: ctx.allRoots)
             }
             if let idx = self.states.firstIndex(where: { $0.id == .simulators }) {
@@ -88,20 +86,13 @@ final class AppState {
         }
     }
 
-    private func context() -> ScanContext? {
-        guard let developerRoot = bookmarks.developerRoot else { return nil }
-        return ScanContext(developerRoot: developerRoot, projectRoots: bookmarks.projectRoots)
+    private func context() -> ScanContext {
+        ScanContext(developerRoot: locations.developerRoot, projectRoots: locations.projectRoots)
     }
 
-    /// Runs `work` on a background task with security-scoped access started
-    /// on every granted root for the duration.
-    nonisolated private static func withRootAccess<T: Sendable>(
-        ctx: ScanContext, _ work: @Sendable @escaping () -> T) async -> T {
-        await Task.detached(priority: .utility) {
-            let started = ctx.allRoots.filter { $0.startAccessingSecurityScopedResource() }
-            defer { for url in started { url.stopAccessingSecurityScopedResource() } }
-            return work()
-        }.value
+    nonisolated private static func offMain<T: Sendable>(
+        _ work: @Sendable @escaping () -> T) async -> T {
+        await Task.detached(priority: .utility) { work() }.value
     }
 
     // MARK: - Cache

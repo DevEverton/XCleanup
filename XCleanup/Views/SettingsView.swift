@@ -9,26 +9,26 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section {
-                if appState.bookmarks.projectRoots.isEmpty {
-                    Text("No folders added yet.").foregroundStyle(.secondary)
+                if appState.locations.projectRoots.isEmpty {
+                    Text("No folders added — the Package Builds category is idle.").foregroundStyle(.secondary)
                 }
-                ForEach(appState.bookmarks.projectRoots, id: \.path) { url in
+                ForEach(appState.locations.projectRoots, id: \.path) { url in
                     HStack {
                         Text(url.path).lineLimit(1).truncationMode(.middle)
                         Spacer()
                         Button("Remove") {
-                            appState.bookmarks.removeProjectRoot(url)
+                            appState.locations.removeProjectRoot(url)
                         }
                     }
                 }
                 Button("Add Folder…") {
-                    appState.bookmarks.promptToAddProjectRoot()
+                    appState.locations.promptToAddProjectRoot()
                     appState.refresh(.spmBuild)
                 }
             } header: {
                 Text("Code folders")
             } footer: {
-                Text("XCleanup scans the folders you add for Swift package build artifacts (.build folders), which can silently grow to hundreds of GB. Add the folder where you keep your projects — or your home folder to cover everything. System folders like Library, Music, and Photos are skipped.")
+                Text("XCleanup scans these folders for Swift package build artifacts (.build folders), which can silently grow to hundreds of GB. Your home folder is scanned by default; system folders like Library, Music, and Photos are skipped. Narrow it to your projects folder for faster scans.")
             }
 
             Section("Behavior") {
@@ -58,18 +58,6 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Access") {
-                HStack {
-                    Text(appState.bookmarks.developerRoot?.path ?? "Library/Developer access not granted")
-                        .lineLimit(1).truncationMode(.middle)
-                        .foregroundStyle(appState.hasAccess ? .primary : .secondary)
-                    Spacer()
-                    Button(appState.hasAccess ? "Re-grant…" : "Grant…") {
-                        appState.bookmarks.promptForDeveloperAccess()
-                        if appState.hasAccess { appState.refreshAll() }
-                    }
-                }
-            }
         }
         .formStyle(.grouped)
         .frame(width: 460)

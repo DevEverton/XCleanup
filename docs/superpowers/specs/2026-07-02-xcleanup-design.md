@@ -1,7 +1,8 @@
 # XCleanup — Design Spec
 
 **Date:** 2026-07-02
-**Status:** Approved
+**Status:** Approved. Amended later the same day: sandbox dropped in favor of
+open-source direct distribution (see "Distribution & permissions").
 
 ## Problem
 
@@ -35,16 +36,24 @@ A `CleanupTarget` protocol — `name`, `scan() async -> ScanResult`, `clean(sele
 3. Symlinks are never followed during scan or delete.
 4. Every destructive action is behind a confirmation dialog.
 
-## Sandbox & permissions
+## Distribution & permissions
 
-App Sandbox stays **on** (App Store eligibility is a goal).
+**Amended 2026-07-02:** App Sandbox is **off**. The project is open source
+(MIT) and distributed directly (GitHub releases / build from source), not via
+the Mac App Store. Hardened Runtime stays on so Developer ID notarization
+remains possible.
 
-- First launch shows onboarding with `NSOpenPanel` grants: one pre-targeted at `~/Library/Developer`, plus one per project folder the user adds.
-- Grants persist as **security-scoped bookmarks** in a `BookmarkStore`.
-- All scan/clean work wraps access in `startAccessingSecurityScopedResource()` / stop.
-- Stale or revoked bookmarks route back to the grant flow.
+- No grant flow and no onboarding: `~/Library/Developer` is read directly.
+- Project scan roots are plain paths in `UserDefaults` (`ScanLocations`),
+  defaulting to the user's home folder; the scanner skips system folders
+  (Library, Applications, Movies, Music, Pictures, Public, .Trash) so a
+  home-folder scan only walks code-like locations.
+- macOS TCC still prompts once for protected folders (Desktop, Documents,
+  Downloads) when first scanned; denial degrades gracefully to empty results.
 
-Accepted trade-offs of sandbox-safe simulator management (no `simctl`):
+Original design kept the sandbox with security-scoped bookmarks for App Store
+eligibility; that flow was implemented and then removed in the same day's
+pivot. Retained trade-offs of file-level simulator management (no `simctl`):
 
 - CoreSimulator notices deleted devices on its next service restart.
 - "Erase" is a best-effort wipe of the device's `data/` contents, not `simctl erase`.

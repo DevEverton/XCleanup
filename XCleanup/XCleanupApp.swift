@@ -9,7 +9,7 @@ struct XCleanupApp: App {
         let state = AppState()
         AppStateHolder.shared = state
         _appState = State(initialValue: state)
-        if state.hasAccess { state.refreshAll() }
+        state.refreshAll()
     }
 
     var body: some Scene {
