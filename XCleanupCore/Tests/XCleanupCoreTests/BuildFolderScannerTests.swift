@@ -49,6 +49,15 @@ final class BuildFolderScannerTests: XCTestCase {
         XCTAssertEqual(result.items.count, 1)
     }
 
+    func testSkipsSystemFoldersForHomeDirectoryGrants() throws {
+        try makePackage("Library/Developer/SomePkg")
+        try makePackage("Music/Pkg")
+        try makePackage("Desktop/dev/RealPkg")
+
+        let result = BuildFolderScanner.scan(roots: [root])
+        XCTAssertEqual(result.items.map(\.name), ["RealPkg"])
+    }
+
     func testSkipsNoiseDirsSymlinksAndDepthLimit() throws {
         try makePackage("node_modules/Pkg")          // inside skipped dir
         try makePackage("a/b/c/d/e/f/DeepPkg")       // beyond maxDepth 5

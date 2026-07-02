@@ -1,8 +1,12 @@
 import Foundation
 
 public enum BuildFolderScanner {
+    /// Build noise plus macOS system folders, so a user can grant their whole
+    /// home folder and auto-discover every repo without scanning Library,
+    /// media folders, or the Trash.
     public static let skippedDirectoryNames: Set<String> = [
         ".git", "node_modules", "Pods", "DerivedData", ".build", ".swiftpm",
+        "Library", "Applications", "Movies", "Music", "Pictures", "Public", ".Trash",
     ]
 
     /// Finds SwiftPM .build directories under the given roots.

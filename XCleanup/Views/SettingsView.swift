@@ -8,7 +8,7 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
-            Section("Project folders scanned for SwiftPM .build") {
+            Section {
                 if appState.bookmarks.projectRoots.isEmpty {
                     Text("No folders added yet.").foregroundStyle(.secondary)
                 }
@@ -25,6 +25,10 @@ struct SettingsView: View {
                     appState.bookmarks.promptToAddProjectRoot()
                     appState.refresh(.spmBuild)
                 }
+            } header: {
+                Text("Code folders")
+            } footer: {
+                Text("XCleanup scans the folders you add for Swift package build artifacts (.build folders), which can silently grow to hundreds of GB. Add the folder where you keep your projects — or your home folder to cover everything. System folders like Library, Music, and Photos are skipped.")
             }
 
             Section("Behavior") {

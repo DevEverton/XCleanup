@@ -27,7 +27,7 @@ final class BookmarkStore {
             .appendingPathComponent("Library/Developer", isDirectory: true)
         guard let url = runOpenPanel(
             startingAt: developerDir,
-            message: "XCleanup needs access to your Library/Developer folder to measure and clean build artifacts.") else { return }
+            message: "The right folder is already selected — just press Grant Access. This covers Xcode's DerivedData, simulators, device support, and build workspaces.") else { return }
         if let data = bookmarkData(for: url) {
             defaults.set(data, forKey: Self.developerKey)
             reload()
@@ -37,7 +37,7 @@ final class BookmarkStore {
     func promptToAddProjectRoot() {
         guard let url = runOpenPanel(
             startingAt: FileManager.default.homeDirectoryForCurrentUser,
-            message: "Choose a folder to scan for SwiftPM .build directories.") else { return }
+            message: "Select the folder where you keep your projects — or just pick your home folder to cover everything. XCleanup scans it for Swift package build folders (.build).") else { return }
         guard let data = bookmarkData(for: url) else { return }
         var list = defaults.array(forKey: Self.projectsKey) as? [Data] ?? []
         list.append(data)

@@ -49,7 +49,7 @@ let allCategories: [CleanupCategory] = [
             },
             scannedAt: Date())
     },
-    CleanupCategory(id: .spmBuild, title: "SwiftPM .build", systemImage: "shippingbox") { ctx in
+    CleanupCategory(id: .spmBuild, title: "Package Builds", systemImage: "shippingbox") { ctx in
         BuildFolderScanner.scan(roots: ctx.projectRoots)
     },
 ]
