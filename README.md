@@ -1,7 +1,21 @@
-# XCleanup
+<p align="center">
+  <img src="docs/assets/icon-256.png" width="128" alt="XCleanup icon">
+</p>
 
-A tiny macOS menu bar app that shows you how much disk space Xcode and Swift
-tooling are silently eating — and cleans it with one click.
+<h1 align="center">XCleanup</h1>
+
+<p align="center">
+  A tiny macOS menu bar app that shows how much disk space Xcode and Swift tooling
+  are silently eating — and cleans it with one click.
+</p>
+
+<p align="center">
+  <a href="https://github.com/DevEverton/XCleanup/actions/workflows/ci.yml"><img src="https://github.com/DevEverton/XCleanup/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/macOS-14%2B-blue?logo=apple" alt="macOS 14+">
+  <img src="https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white" alt="Swift 6">
+  <img src="https://img.shields.io/badge/UI-SwiftUI-8A2BE2" alt="SwiftUI">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT license"></a>
+</p>
 
 Build artifacts accumulate fast: DerivedData, simulator devices, per-package
 SwiftPM `.build` folders scattered through your repos. They can quietly grow

@@ -205,9 +205,15 @@ struct MenuPanelView: View {
                     if state.id == .simulators {
                         Button("Erase") { pending = .eraseSimulator(item) }
                             .controlSize(.mini)
+                            .help("Factory reset: keeps the simulator but wipes its apps, data, and settings")
                     }
                     Button("Delete") { pending = .cleanItem(state.id, item) }
                         .controlSize(.mini)
+                        .buttonStyle(.borderedProminent)
+                        .tint(.red)
+                        .help(state.id == .simulators
+                            ? "Removes the simulator entirely from your Mac"
+                            : "Deletes this item from disk")
                 }
                 Text(item.size, format: .byteCount(style: .file))
                     .font(.caption)

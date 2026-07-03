@@ -267,6 +267,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = XCleanup;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -299,6 +301,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = XCleanup;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -320,20 +324,6 @@
 		};
 /* End XCBuildConfiguration section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		A0C0FFEE0000000000000002 /* XCLocalSwiftPackageReference "XCleanupCore" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = XCleanupCore;
-		};
-/* End XCLocalSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		A0C0FFEE0000000000000003 /* XCleanupCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = XCleanupCore;
-		};
-/* End XCSwiftPackageProductDependency section */
-
 /* Begin XCConfigurationList section */
 		50635F4C2FF69A6600731FEF /* Build configuration list for PBXProject "XCleanup" */ = {
 			isa = XCConfigurationList;
@@ -354,6 +344,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A0C0FFEE0000000000000002 /* XCLocalSwiftPackageReference "XCleanupCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = XCleanupCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A0C0FFEE0000000000000003 /* XCleanupCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = XCleanupCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 50635F492FF69A6600731FEF /* Project object */;
 }
