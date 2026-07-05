@@ -41,7 +41,9 @@ struct MenuPanelView: View {
             Divider()
             footer
         }
-        .frame(width: 400)
+        // Fixed size: on macOS 14/15 the MenuBarExtra window gives a
+        // ScrollView zero ideal height, collapsing the list entirely.
+        .frame(width: 400, height: 500)
         .onAppear { appState.refreshAll() }
         .confirmationDialog(
             pending?.title ?? "",
@@ -90,7 +92,7 @@ struct MenuPanelView: View {
 
     private var categoryList: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: 1) {
                 ForEach(appState.states) { state in
                     categoryRow(state)
                     if expanded.contains(state.id) {
@@ -102,8 +104,9 @@ struct MenuPanelView: View {
                 }
             }
             .padding(6)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxHeight: 440)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func categoryRow(_ state: AppState.CategoryState) -> some View {
