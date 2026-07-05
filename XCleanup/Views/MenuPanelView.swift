@@ -6,8 +6,9 @@ struct MenuPanelView: View {
     @Environment(\.openWindow) private var openWindow
     @State private var expanded: Set<CategoryID> = []
     @State private var hoveredRow: String?
+    @State private var pendingConfirmation: PendingAction?
 
-    enum PendingAction {
+    enum PendingAction: Equatable {
         case cleanAll(CategoryID)
         case cleanItem(CategoryID, ScanItem)
         case eraseSimulator(ScanItem)
@@ -36,36 +37,89 @@ struct MenuPanelView: View {
         var buttonLabel: String {
             if case .eraseSimulator = self { "Erase" } else { "Delete" }
         }
+
+        var icon: String {
+            if case .eraseSimulator = self { "eraser" } else { "trash" }
+        }
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            Divider()
-            categoryList
-            Divider()
-            footer
+        ZStack {
+            VStack(spacing: 0) {
+                header
+                Divider()
+                categoryList
+                Divider()
+                footer
+            }
+            .disabled(pendingConfirmation != nil)
+
+            if let action = pendingConfirmation {
+                confirmationOverlay(action)
+            }
         }
         // Fixed size: on macOS 14/15 the MenuBarExtra window gives a
         // ScrollView zero ideal height, collapsing the list entirely.
         .frame(width: 400, height: 500)
         .onAppear { appState.refreshAll() }
+        .animation(.snappy(duration: 0.2), value: pendingConfirmation)
     }
 
-    /// SwiftUI dialogs inside a MenuBarExtra window close with the panel
-    /// before their actions run; a standalone app-modal NSAlert survives it.
-    private func confirm(_ action: PendingAction) {
-        let alert = NSAlert()
-        alert.messageText = action.title
-        alert.informativeText = action.detail
-        alert.alertStyle = .warning
-        let destructive = alert.addButton(withTitle: action.buttonLabel)
-        destructive.hasDestructiveAction = true
-        alert.addButton(withTitle: "Cancel")
-        NSApp.activate(ignoringOtherApps: true)
-        if alert.runModal() == .alertFirstButtonReturn {
-            perform(action)
+    // MARK: - Confirmation (in-panel, so the MenuBarExtra window never
+    // resigns key and auto-closes the way a separate NSAlert would).
+
+    private func confirmationOverlay(_ action: PendingAction) -> some View {
+        ZStack {
+            Rectangle()
+                .fill(.black.opacity(0.25))
+                .contentShape(Rectangle())
+                .onTapGesture { pendingConfirmation = nil }
+
+            VStack(spacing: 14) {
+                Image(systemName: action.icon)
+                    .font(.system(size: 26))
+                    .foregroundStyle(.red)
+                Text(action.title)
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                Text(action.detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                HStack(spacing: 10) {
+                    Button { pendingConfirmation = nil } label: {
+                        Text("Cancel")
+                            .fontWeight(.medium)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(.quaternary, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .keyboardShortcut(.cancelAction)
+
+                    Button {
+                        perform(action)
+                        pendingConfirmation = nil
+                    } label: {
+                        Text(action.buttonLabel)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(Color.red, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .keyboardShortcut(.defaultAction)
+                }
+                .padding(.top, 2)
+            }
+            .padding(20)
+            .frame(width: 300)
+            .background(RoundedRectangle(cornerRadius: 16).fill(.regularMaterial))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.quaternary))
+            .shadow(color: .black.opacity(0.18), radius: 12, y: 4)
         }
+        .transition(.opacity)
     }
 
     // MARK: - Header
@@ -146,11 +200,11 @@ struct MenuPanelView: View {
             if isHovered, !state.isBusy, let items = state.result?.items, !items.isEmpty {
                 if state.id == .simulators, items.contains(where: \.isStale) {
                     Button("Delete Unavailable") {
-                        confirm(.deleteUnavailable(items: items.filter(\.isStale)))
+                        pendingConfirmation = .deleteUnavailable(items: items.filter(\.isStale))
                     }
                     .controlSize(.small)
                 } else {
-                    Button("Clean") { confirm(.cleanAll(state.id)) }
+                    Button("Clean") { pendingConfirmation = .cleanAll(state.id) }
                         .controlSize(.small)
                 }
             }
@@ -194,7 +248,7 @@ struct MenuPanelView: View {
         }
         .contextMenu {
             Button("Rescan") { appState.refresh(state.id) }
-            Button("Delete All…") { confirm(.cleanAll(state.id)) }
+            Button("Delete All…") { pendingConfirmation = .cleanAll(state.id) }
                 .disabled(state.result?.items.isEmpty ?? true)
         }
         .animation(.snappy, value: hoveredRow)
@@ -203,6 +257,7 @@ struct MenuPanelView: View {
     private func itemRows(_ state: AppState.CategoryState) -> some View {
         ForEach(state.result?.items ?? []) { item in
             let isHovered = hoveredRow == item.id
+            let status = appState.status(for: item)
             HStack(spacing: 6) {
                 Circle()
                     .fill(state.id.tint.opacity(0.6))
@@ -217,31 +272,39 @@ struct MenuPanelView: View {
                     }
                 }
                 Spacer()
-                if isHovered {
-                    if state.id == .simulators {
-                        Button("Erase") { confirm(.eraseSimulator(item)) }
+                if let status {
+                    ProgressView().controlSize(.mini)
+                    Text(status)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    if isHovered {
+                        if state.id == .simulators {
+                            Button("Erase") { pendingConfirmation = .eraseSimulator(item) }
+                                .controlSize(.mini)
+                                .help("Factory reset: keeps the simulator but wipes its apps, data, and settings")
+                        }
+                        Button("Delete") { pendingConfirmation = .cleanItem(state.id, item) }
                             .controlSize(.mini)
-                            .help("Factory reset: keeps the simulator but wipes its apps, data, and settings")
+                            .buttonStyle(.borderedProminent)
+                            .tint(.red)
+                            .help(state.id == .simulators
+                                ? "Removes the simulator entirely from your Mac"
+                                : "Deletes this item from disk")
                     }
-                    Button("Delete") { confirm(.cleanItem(state.id, item)) }
-                        .controlSize(.mini)
-                        .buttonStyle(.borderedProminent)
-                        .tint(.red)
-                        .help(state.id == .simulators
-                            ? "Removes the simulator entirely from your Mac"
-                            : "Deletes this item from disk")
+                    Text(item.size, format: .byteCount(style: .file))
+                        .font(.caption)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
                 }
-                Text(item.size, format: .byteCount(style: .file))
-                    .font(.caption)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
             }
+            .opacity(status == nil ? 1 : 0.55)
             .padding(.leading, 40)
             .padding(.trailing, 10)
             .padding(.vertical, 3)
             .background(
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(isHovered ? AnyShapeStyle(.quaternary.opacity(0.4)) : AnyShapeStyle(.clear))
+                    .fill(isHovered && status == nil ? AnyShapeStyle(.quaternary.opacity(0.4)) : AnyShapeStyle(.clear))
             )
             .onHover { inside in
                 hoveredRow = inside ? item.id : (hoveredRow == item.id ? nil : hoveredRow)

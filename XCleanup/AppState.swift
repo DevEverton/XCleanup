@@ -14,6 +14,8 @@ final class AppState {
 
     let locations = ScanLocations()
     private(set) var states: [CategoryState]
+    /// item.id → status label ("Deleting…" / "Erasing…") while work is in flight.
+    private(set) var activeItems: [String: String] = [:]
     var refreshIntervalHours: Int {
         didSet {
             UserDefaults.standard.set(refreshIntervalHours, forKey: "refresh.hours")
@@ -43,6 +45,10 @@ final class AppState {
         states.first { $0.id == id }
     }
 
+    func status(for item: ScanItem) -> String? {
+        activeItems[item.id]
+    }
+
     func refreshAll() {
         for id in CategoryID.allCases { refresh(id) }
     }
@@ -67,30 +73,47 @@ final class AppState {
         guard let index = states.firstIndex(where: { $0.id == id }),
               !states[index].isBusy, !items.isEmpty else { return }
         let ctx = context()
+        let scan = states[index].category.scan
+        let ids = items.map(\.id)
+        for itemID in ids { activeItems[itemID] = "Deleting…" }
         states[index].isBusy = true
         Task {
             let outcome = await Self.offMain {
                 Deleter.delete(items: items, allowedRoots: ctx.allRoots)
             }
+            // Rescan in the same task so the "Deleting…" rows stay visible
+            // until fresh data (with the items gone) replaces them.
+            let result = await Self.offMain { scan(ctx) }
             if let idx = self.states.firstIndex(where: { $0.id == id }) {
                 self.states[idx].failures = outcome.failures
+                self.states[idx].result = result
                 self.states[idx].isBusy = false
             }
-            self.refresh(id)
+            for itemID in ids { self.activeItems[itemID] = nil }
+            self.saveCache()
         }
     }
 
     func eraseSimulator(_ item: ScanItem) {
+        guard let index = states.firstIndex(where: { $0.id == .simulators }),
+              !states[index].isBusy else { return }
         let ctx = context()
+        let scan = states[index].category.scan
         let dataURL = item.url.appendingPathComponent("data", isDirectory: true)
+        activeItems[item.id] = "Erasing…"
+        states[index].isBusy = true
         Task {
             let outcome = await Self.offMain {
                 Deleter.eraseContents(of: dataURL, allowedRoots: ctx.allRoots)
             }
+            let result = await Self.offMain { scan(ctx) }
             if let idx = self.states.firstIndex(where: { $0.id == .simulators }) {
                 self.states[idx].failures = outcome.failures
+                self.states[idx].result = result
+                self.states[idx].isBusy = false
             }
-            self.refresh(.simulators)
+            self.activeItems[item.id] = nil
+            self.saveCache()
         }
     }
 
