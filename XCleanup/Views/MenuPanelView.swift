@@ -5,23 +5,13 @@ struct MenuPanelView: View {
     @Bindable var appState: AppState
     @Environment(\.openWindow) private var openWindow
     @State private var expanded: Set<CategoryID> = []
-    @State private var pending: PendingAction?
     @State private var hoveredRow: String?
 
-    enum PendingAction: Identifiable {
+    enum PendingAction {
         case cleanAll(CategoryID)
         case cleanItem(CategoryID, ScanItem)
         case eraseSimulator(ScanItem)
         case deleteUnavailable(items: [ScanItem])
-
-        var id: String {
-            switch self {
-            case .cleanAll(let id): "all-\(id.rawValue)"
-            case .cleanItem(_, let item): "item-\(item.id)"
-            case .eraseSimulator(let item): "erase-\(item.id)"
-            case .deleteUnavailable: "unavailable"
-            }
-        }
 
         var title: String {
             switch self {
@@ -30,6 +20,21 @@ struct MenuPanelView: View {
             case .eraseSimulator(let item): "Erase all content of “\(item.name)”?"
             case .deleteUnavailable(let items): "Delete \(items.count) unavailable simulator(s)?"
             }
+        }
+
+        var detail: String {
+            switch self {
+            case .cleanAll, .cleanItem:
+                "Build artifacts are removed from disk and rebuilt by Xcode when needed."
+            case .eraseSimulator:
+                "The simulator is kept, but its apps, data, and settings are wiped."
+            case .deleteUnavailable:
+                "These simulators belong to runtimes that are no longer installed."
+            }
+        }
+
+        var buttonLabel: String {
+            if case .eraseSimulator = self { "Erase" } else { "Delete" }
         }
     }
 
@@ -45,13 +50,21 @@ struct MenuPanelView: View {
         // ScrollView zero ideal height, collapsing the list entirely.
         .frame(width: 400, height: 500)
         .onAppear { appState.refreshAll() }
-        .confirmationDialog(
-            pending?.title ?? "",
-            isPresented: Binding(get: { pending != nil }, set: { if !$0 { pending = nil } }),
-            titleVisibility: .visible
-        ) {
-            Button("Delete", role: .destructive) { perform() }
-            Button("Cancel", role: .cancel) { pending = nil }
+    }
+
+    /// SwiftUI dialogs inside a MenuBarExtra window close with the panel
+    /// before their actions run; a standalone app-modal NSAlert survives it.
+    private func confirm(_ action: PendingAction) {
+        let alert = NSAlert()
+        alert.messageText = action.title
+        alert.informativeText = action.detail
+        alert.alertStyle = .warning
+        let destructive = alert.addButton(withTitle: action.buttonLabel)
+        destructive.hasDestructiveAction = true
+        alert.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
+        if alert.runModal() == .alertFirstButtonReturn {
+            perform(action)
         }
     }
 
@@ -133,11 +146,11 @@ struct MenuPanelView: View {
             if isHovered, !state.isBusy, let items = state.result?.items, !items.isEmpty {
                 if state.id == .simulators, items.contains(where: \.isStale) {
                     Button("Delete Unavailable") {
-                        pending = .deleteUnavailable(items: items.filter(\.isStale))
+                        confirm(.deleteUnavailable(items: items.filter(\.isStale)))
                     }
                     .controlSize(.small)
                 } else {
-                    Button("Clean") { pending = .cleanAll(state.id) }
+                    Button("Clean") { confirm(.cleanAll(state.id)) }
                         .controlSize(.small)
                 }
             }
@@ -181,7 +194,7 @@ struct MenuPanelView: View {
         }
         .contextMenu {
             Button("Rescan") { appState.refresh(state.id) }
-            Button("Delete All…") { pending = .cleanAll(state.id) }
+            Button("Delete All…") { confirm(.cleanAll(state.id)) }
                 .disabled(state.result?.items.isEmpty ?? true)
         }
         .animation(.snappy, value: hoveredRow)
@@ -206,11 +219,11 @@ struct MenuPanelView: View {
                 Spacer()
                 if isHovered {
                     if state.id == .simulators {
-                        Button("Erase") { pending = .eraseSimulator(item) }
+                        Button("Erase") { confirm(.eraseSimulator(item)) }
                             .controlSize(.mini)
                             .help("Factory reset: keeps the simulator but wipes its apps, data, and settings")
                     }
-                    Button("Delete") { pending = .cleanItem(state.id, item) }
+                    Button("Delete") { confirm(.cleanItem(state.id, item)) }
                         .controlSize(.mini)
                         .buttonStyle(.borderedProminent)
                         .tint(.red)
@@ -284,9 +297,7 @@ struct MenuPanelView: View {
         .padding(8)
     }
 
-    private func perform() {
-        guard let action = pending else { return }
-        pending = nil
+    private func perform(_ action: PendingAction) {
         switch action {
         case .cleanAll(let id):
             appState.clean(id, items: appState.state(for: id)?.result?.items ?? [])
