@@ -47,8 +47,6 @@ Runs on **macOS 14 (Sonoma) or later**.
 
 ### Homebrew
 
-*(available once the first release is tagged)*
-
 ```bash
 brew install DevEverton/tap/xcleanup
 ```
